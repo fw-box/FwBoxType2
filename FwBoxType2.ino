@@ -15,17 +15,15 @@
 #include "FwBox.h"
 #include <SHT3x.h>
 #include <BH1750.h> // Light Sensor (BH1750)
-#include "FwBox_UnifiedLcd.h"
-#include <U8g2lib.h>
 
 
 #define DEVICE_TYPE 2
-#define FIRMWARE_VERSION "1.1.1"
+#define FIRMWARE_VERSION "1.1.3"
 
 //
 // Debug definitions
 //
-#define FW_BOX_DEBUG 1
+#define FW_BOX_DEBUG 0
 
 #if FW_BOX_DEBUG == 1
   #define DBG_PRINT(VAL) Serial.print(VAL)
@@ -40,16 +38,6 @@
 //
 // Global variable
 //
-
-//
-// LCD 1602
-//
-FwBox_UnifiedLcd* UnifiedLcd = 0;
-
-//
-// OLED 128x128
-//
-U8G2_SSD1327_MIDAS_128X128_1_HW_I2C* u8g2 = 0;
 
 //
 // SHT3x
@@ -74,48 +62,6 @@ void setup()
 {
   Wire.begin();  // Join IIC bus for Light Sensor (BH1750).
   Serial.begin(9600);
-
-  //
-  // Initialize the fw-box core (early stage)
-  //
-  fbEarlyBegin(DEVICE_TYPE, FIRMWARE_VERSION);
-
-  //
-  // Initialize the LCD1602
-  //
-  UnifiedLcd = new FwBox_UnifiedLcd(16, 2);
-  if(UnifiedLcd->begin() != 0) {
-    //
-    // LCD1602 doesn't exist, delete it.
-    //
-    delete UnifiedLcd;
-    UnifiedLcd = 0;
-    DBG_PRINTLN("LCD1602 initialization failed.");
-  }
-
-  //
-  // Detect the I2C address of OLED.
-  //
-  Wire.beginTransmission(0x78>>1);
-  uint8_t data8 = Wire.endTransmission();
-  if (data8 == 0) {
-    //
-    // Initialize the OLED
-    //
-    u8g2 = new U8G2_SSD1327_MIDAS_128X128_1_HW_I2C(U8G2_R0, /* reset=*/ U8X8_PIN_NONE);  /* Uno: A4=SDA, A5=SCL, add "u8g2.setBusClock(400000);" into setup() for speedup if possible */
-    u8g2->begin();
-    u8g2->enableUTF8Print();
-    u8g2->setFont(u8g2_font_unifont_t_chinese1);  // use chinese2 for all the glyphs of "你好世界"
-  }
-  else {
-    DBG_PRINTLN("U8G2_SSD1327_MIDAS_128X128_1_HW_I2C is not found.");
-    u8g2 = 0;
-  }
-
-  //
-  // Display the sensors
-  //
-  display();
 
   //
   // Initialize the fw-box core
@@ -151,11 +97,6 @@ void loop()
     // Read sensors
     //
     read();
-  
-    //
-    // Display sensors
-    //
-    display();
 
     //
     // Check if any reads failed.
@@ -215,52 +156,5 @@ void read()
   LightValue = SensorLight.readLightLevel();
   if(LightValue > 0) {
     DBG_PRINTF("Light : %f LUX\n", LightValue);
-  }
-}
-
-void display()
-{
-  //
-  // Draw the LCD 1602
-  //
-  if(UnifiedLcd != 0) {
-    char buff[32];
-
-    memset(&(buff[0]), 0, 32);
-    sprintf(buff, "%.2fC %.2f%%", TemperatureValue, HumidityValue);
-
-    //
-    // Center the string.
-    //
-    UnifiedLcd->printAtCenter(0, buff);
-
-    memset(&(buff[0]), 0, 32);
-    sprintf(buff, "%.2fLUX", LightValue);
-
-    //
-    // Center the string.
-    //
-    UnifiedLcd->printAtCenter(1, buff);
-  }
-
-  //
-  // Draw the OLED
-  //
-  if(u8g2 != 0) {
-    u8g2->setFont(u8g2_font_unifont_t_chinese2);
-    u8g2->firstPage();
-    do {
-      String line0 = String(TemperatureValue) + " " + FwBoxIns.getValUnit(0);
-      u8g2->setCursor(5, 20);
-      u8g2->print(line0);
-
-      String line1 = String(HumidityValue) + " " + FwBoxIns.getValUnit(1);
-      u8g2->setCursor(5, 55);
-      u8g2->print(line1);
-
-      String line2 = String(LightValue) + " " + FwBoxIns.getValUnit(2);
-      u8g2->setCursor(5, 90);
-      u8g2->print(line2);
-    } while ( u8g2->nextPage() );
   }
 }
