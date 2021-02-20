@@ -20,7 +20,7 @@
 
 
 #define DEVICE_TYPE 2
-#define FIRMWARE_VERSION "1.1"
+#define FIRMWARE_VERSION "1.1.1"
 
 //
 // Debug definitions
