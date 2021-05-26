@@ -18,7 +18,7 @@
 
 
 #define DEVICE_TYPE 2
-#define FIRMWARE_VERSION "1.1.3"
+#define FIRMWARE_VERSION "1.1.4"
 
 //
 // Debug definitions
@@ -61,7 +61,7 @@ unsigned long ReadingTime = 0;
 void setup()
 {
   Wire.begin();  // Join IIC bus for Light Sensor (BH1750).
-  Serial.begin(9600);
+  Serial.begin(115200);
 
   //
   // Initialize the fw-box core
